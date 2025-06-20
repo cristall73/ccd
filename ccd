@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Dashboard per analizzare le principali criptovalute volatili, escluse le stablecoin." />
+  <title>Cristall Crypto Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+  <div class="p-4 max-w-7xl mx-auto">
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-blue-400">Cristall Crypto Dashboard</h1>
+      <div class="flex flex-wrap justify-center gap-4 mb-6">
+        <button onclick="manualRefresh()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+          Aggiorna Manualmente
+        </button>
+        <a href="https://cristall73.github.io/te3tm10/" target="_blank" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-6 rounded-lg shadow-md transition-transform hover:scale-105">
+          Bitcoin Cristall Clock
+        </a>
+        <a href="https://www.blockchaincenter.net/en/bitcoin-rainbow-chart/" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+          BTC Rainbow Chart
+        </a>
+        <a href="https://www.bitcoinmagazinepro.com/charts/mvrv-zscore/" target="_blank" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+          Bitcoin: MVRV Z-Score
+        </a>
+        <a href="https://cryptobubbles.net/" target="_blank" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+          Crypto Bubbles
+        </a>
+        <a href="https://coinmarketcap.com/" target="_blank" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+          Fear & Greed
+        </a>
+        <button onclick="apriCalcolatore()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+          Calcolatore Trade
+        </button>
+      </div>
+    </div>
+
+    <div class="mb-2 text-sm text-gray-300">
+      <p class="text-base text-gray-400">Visualizzazione delle criptovalute più volatili e liquide (escluse le stablecoin) con segnali operativi.</p>
+    </div>
+    <div class="mb-6 text-sm text-gray-300 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+      <p id="countdown" class="text-base text-blue-300"></p>
+      <p id="last-update" class="text-base"></p>
+    </div>
+    <p id="loading" class="text-lg text-gray-400 text-center py-8 animate-pulse">Analizzando il mercato...</p>
+    <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+
+  <script>
+    let countdownInterval;
+
+    function getNext4HourTimestamp() {
+      const now = new Date();
+      const next = new Date(now);
+      const hours = now.getUTCHours();
+      const nextHour = Math.ceil((hours + 1) / 4) * 4;
+      next.setUTCHours(nextHour, 0, 0, 0);
+      if (next <= now) next.setUTCHours(nextHour + 4, 0, 0, 0);
+      return next;
+    }
+
+    function updateCountdown() {
+      const now = new Date();
+      const next = getNext4HourTimestamp();
+      const diffMs = next - now;
+      const hours = Math.floor(diffMs / 3600000);
+      const minutes = Math.floor((diffMs % 3600000) / 60000);
+      const seconds = Math.floor((diffMs % 60000) / 1000);
+      document.getElementById('countdown').innerText = `Prossimo aggiornamento in ${hours}h ${minutes}m ${seconds}s (UTC)`;
+      if (diffMs <= 1000) {
+        clearInterval(countdownInterval);
+        loadDashboard();
+        startCountdown();
+      }
+    }
+
+    function startCountdown() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(updateCountdown, 1000);
+    }
+    startCountdown();
+
+    async function fetchCryptoData() {
+      const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=true&price_change_percentage=24h');
+      if (!res.ok) throw new Error('Errore nel recupero dei dati');
+      return res.json();
+    }
+
+    function formatPrice(price) {
+      return price?.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 8 }) || 'N/A';
+    }
+
+    function suggestAction(change24h, sparkline) {
+      if (!sparkline || sparkline.length < 3) return 'NEUTRO';
+      const recent = sparkline.slice(-3);
+      const momentum = recent[2] - recent[0];
+      if (change24h > 1 && momentum > 0) return 'LONG';
+      if (change24h < -1 && momentum < 0) return 'SELL';
+      return 'NEUTRO';
+    }
+
+    function checkNearExtremes(current, sparkline) {
+      if (!sparkline || sparkline.length === 0) return '';
+      const min = Math.min(...sparkline);
+      const max = Math.max(...sparkline);
+      const range = max - min;
+      if (range === 0) return '';
+      const pos = (current - min) / range;
+      if (pos < 0.1) return 'Vicino ai minimi';
+      if (pos > 0.9) return 'Vicino ai massimi';
+      return '';
+    }
+
+    const tradingViewSymbolOverrides = {
+      okb: 'OKBUSD',
+      busd: 'BUSDUSD',
+      usdc: 'USDCUSD',
+      dai: 'DAIUSD',
+      usdt: 'USDTUSD'
+    };
+
+    async function loadDashboard() {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('dashboard').innerHTML = '';
+      try {
+        const data = await fetchCryptoData();
+        const stablecoinIds = ['tether','usd-coin','binance-usd','dai','true-usd','pax-gold','stasis-euro','gemini-dollar','frax'];
+        const filtered = data.filter(c => !stablecoinIds.includes(c.id) && c.symbol && /^[a-z0-9]+$/i.test(c.symbol) && c.total_volume > 10000000 && c.current_price > 0.01);
+        const sorted = filtered.sort((a, b) => Math.abs(b.price_change_percentage_24h) - Math.abs(a.price_change_percentage_24h));
+        const actionable = sorted.filter(c => ['LONG', 'SELL'].includes(suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price))).slice(0, 9);
+
+        document.getElementById('loading').style.display = 'none';
+
+        if (!actionable.length) {
+          document.getElementById('dashboard').innerHTML = '<p class="text-center text-gray-400">Nessuna coin con segnale operativo chiaro.</p>';
+          return;
+        }
+
+        actionable.forEach(coin => {
+          const symbol = tradingViewSymbolOverrides[coin.symbol.toLowerCase()] || coin.symbol.toUpperCase() + 'USDT';
+          const action = suggestAction(coin.price_change_percentage_24h, coin.sparkline_in_7d?.price);
+          const extremesNote = checkNearExtremes(coin.current_price, coin.sparkline_in_7d?.price);
+          const changeClass = coin.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400';
+
+          const card = document.createElement('a');
+          card.href = `https://www.tradingview.com/symbols/${symbol}/`;
+          card.target = '_blank';
+          card.rel = 'noopener noreferrer';
+          card.className = 'bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl flex flex-col justify-between';
+          card.innerHTML = `
+            <div class="flex items-center mb-3">
+              <img src="${coin.image}" alt="Logo ${coin.name}" class="w-8 h-8 mr-3 rounded-full" />
+              <h2 class="text-xl font-bold">${coin.name} <span class="text-gray-400 text-sm">(${coin.symbol.toUpperCase()})</span></h2>
+            </div>
+            <p class="text-md">Prezzo: <span class="font-semibold">${formatPrice(coin.current_price)}</span></p>
+            <p class="text-md ${changeClass}">Variazione 24h: ${coin.price_change_percentage_24h?.toFixed(2)}%</p>
+            <p class="text-sm text-gray-500">Volume 24h: ${formatPrice(coin.total_volume)}</p>
+            <p class="text-lg font-bold mt-2 ${action === 'LONG' ? 'text-green-300' : action === 'SELL' ? 'text-red-300' : 'text-gray-400'}">Segnale: ${action}</p>
+            ${extremesNote ? `<p class="text-sm text-yellow-400 mt-1">${extremesNote}</p>` : ''}
+            <iframe src="https://www.tradingview.com/widgetembed/?symbol=${symbol}&interval=D&theme=dark&style=1&locale=it&toolbarbg=1e293b&hide_top_toolbar=true&saveimage=false&studies=[]" style="width:100%;height:300px;border:none;margin-top:1rem;" allowtransparency="true" scrolling="no"></iframe>
+          `;
+          document.getElementById('dashboard').appendChild(card);
+        });
+        const now = new Date();
+        document.getElementById('last-update').innerText = `Ultimo aggiornamento: ${now.toLocaleTimeString('it-IT')} del ${now.toLocaleDateString('it-IT')}`;
+      } catch (err) {
+        document.getElementById('loading').innerText = `Errore nel caricamento: ${err.message}`;
+        document.getElementById('loading').style.color = 'red';
+      }
+    }
+
+    function manualRefresh() {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('loading').innerText = 'Aggiornamento manuale in corso...';
+      loadDashboard();
+    }
+
+    function apriCalcolatore() {
+      fetchCryptoData().then(data => {
+        const stablecoinIds = ['tether','usd-coin','binance-usd','dai','true-usd','pax-gold','stasis-euro','gemini-dollar','frax'];
+        const filtered = data.filter(c => !stablecoinIds.includes(c.id) && c.symbol && /^[a-z0-9]+$/i.test(c.symbol) && c.total_volume > 10000000 && c.current_price > 0.01);
+        const sorted = filtered.sort((a, b) => Math.abs(b.price_change_percentage_24h) - Math.abs(a.price_change_percentage_24h));
+        const actionable = sorted.filter(c => ['LONG', 'SELL'].includes(suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price))).slice(0, 9);
+        const parametri = actionable.map(c => `${c.id},${c.current_price}`).join('|');
+        const url = `calcolatore.html?dati=${encodeURIComponent(parametri)}`;
+        window.open(url, '_blank');
+      });
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>
