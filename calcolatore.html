@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calcolatore Trade</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans p-4">
+  <h1 class="text-2xl font-bold text-blue-400 mb-4">Simulazione Investimento Crypto</h1>
+
+  <form id="input-form" class="space-y-4"></form>
+
+  <div class="mt-6 space-x-4">
+    <button onclick="iniziaMonitoraggio()" class="bg-green-600 hover:bg-green-700 py-2 px-4 rounded-lg">Avvia Monitoraggio</button>
+    <button onclick="aggiornaValori()" class="bg-blue-600 hover:bg-blue-700 py-2 px-4 rounded-lg">Aggiorna Ora</button>
+  </div>
+
+  <h2 class="text-xl font-semibold mt-8 mb-2">Risultati</h2>
+  <div id="risultati" class="space-y-2"></div>
+
+  <script>
+    let cryptoSelezionate = [];
+
+    // Caricamento iniziale da URL o da memoria locale
+    window.onload = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('dati')) {
+        const raw = decodeURIComponent(params.get('dati'));
+        cryptoSelezionate = raw.split('|').map(d => {
+          const [id, prezzo] = d.split(',');
+          return { id, prezzoIniziale: parseFloat(prezzo), investimento: 0 };
+        });
+        localStorage.setItem('simulazione_crypto', JSON.stringify(cryptoSelezionate));
+      } else {
+        const salvate = localStorage.getItem('simulazione_crypto');
+        if (salvate) cryptoSelezionate = JSON.parse(salvate);
+      }
+      generaForm();
+    };
+
+    function generaForm() {
+      const form = document.getElementById('input-form');
+      form.innerHTML = '';
+      cryptoSelezionate.forEach((c, i) => {
+        form.innerHTML += `
+          <div>
+            <label class="block mb-1">${c.id.toUpperCase()} - Prezzo iniziale: $${c.prezzoIniziale.toFixed(4)}</label>
+            <input type="number" placeholder="Investimento in €" class="text-black p-2 rounded w-full"
+              onchange="aggiornaInvestimento(${i}, this.value)" value="${c.investimento || ''}" />
+          </div>
+        `;
+      });
+    }
+
+    function aggiornaInvestimento(index, valore) {
+      cryptoSelezionate[index].investimento = parseFloat(valore);
+      localStorage.setItem('simulazione_crypto', JSON.stringify(cryptoSelezionate));
+    }
+
+    function iniziaMonitoraggio() {
+      aggiornaValori();
+      setInterval(aggiornaValori, 15 * 60 * 1000); // ogni 15 minuti
+    }
+
+    async function aggiornaValori() {
+      const ids = cryptoSelezionate.map(c => c.id).join(',');
+      const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
+      const data = await res.json();
+
+      const output = document.getElementById('risultati');
+      output.innerHTML = '';
+
+      let totaleIniziale = 0, totaleAttuale = 0;
+
+      cryptoSelezionate.forEach(c => {
+        const attuale = data[c.id]?.usd;
+        if (!attuale || !c.investimento) return;
+        const variazione = (attuale - c.prezzoIniziale) / c.prezzoIniziale;
+        const valoreAttuale = c.investimento * (1 + variazione);
+        totaleIniziale += c.investimento;
+        totaleAttuale += valoreAttuale;
+
+        output.innerHTML += `
+          <div class="p-3 bg-gray-800 rounded shadow">
+            <strong>${c.id.toUpperCase()}</strong><br/>
+            Iniziale: $${c.prezzoIniziale.toFixed(4)} → Attuale: $${attuale.toFixed(4)}<br/>
+            Investito: €${c.investimento.toFixed(2)} → Valore: €${valoreAttuale.toFixed(2)}<br/>
+            <span class="${variazione >= 0 ? 'text-green-400' : 'text-red-400'}">${(variazione * 100).toFixed(2)}%</span>
+          </div>
+        `;
+      });
+
+      const totaleChange = totaleAttuale - totaleIniziale;
+      output.innerHTML += `
+        <div class="mt-4 p-4 bg-blue-900 rounded">
+          <strong>Totale Iniziale:</strong> €${totaleIniziale.toFixed(2)}<br/>
+          <strong>Totale Attuale:</strong> €${totaleAttuale.toFixed(2)}<br/>
+          <strong>Profitto Netto:</strong>
+          <span class="${totaleChange >= 0 ? 'text-green-400' : 'text-red-400'}">
+            €${totaleChange.toFixed(2)} (${((totaleChange / totaleIniziale) * 100).toFixed(2)}%)
+          </span>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
