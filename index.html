@@ -91,12 +91,26 @@
       return price?.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 8 }) || 'N/A';
     }
 
-    function suggestAction(change24h, sparkline) {
-      if (!sparkline || sparkline.length < 3) return 'NEUTRO';
-      const recent = sparkline.slice(-3);
-      const momentum = recent[2] - recent[0];
-      if (change24h > 1 && momentum > 0) return 'LONG';
-      if (change24h < -1 && momentum < 0) return 'SELL';
+    function calcolaRSI(prices, period = 14) {
+      if (prices.length < period + 1) return null;
+      let gains = 0, losses = 0;
+      for (let i = 1; i <= period; i++) {
+        const diff = prices[prices.length - i] - prices[prices.length - i - 1];
+        if (diff > 0) gains += diff;
+        else losses -= diff;
+      }
+      const rs = gains / (losses || 1);
+      return Math.round(100 - (100 / (1 + rs)));
+    }
+
+    function suggestAction(change24h, sparkline, currentPrice) {
+      if (!sparkline || sparkline.length < 14) return 'NEUTRO';
+      const ma7 = sparkline.slice(-7).reduce((a, b) => a + b, 0) / 7;
+      const momentum = sparkline.at(-1) - sparkline.at(-3);
+      const rsi = calcolaRSI(sparkline);
+
+      if (change24h > 1 && momentum > 0 && currentPrice > ma7 && rsi < 70) return 'LONG';
+      if (change24h < -1 && momentum < 0 && currentPrice < ma7 && rsi > 30) return 'SELL';
       return 'NEUTRO';
     }
 
@@ -113,11 +127,7 @@
     }
 
     const tradingViewSymbolOverrides = {
-      okb: 'OKBUSD',
-      busd: 'BUSDUSD',
-      usdc: 'USDCUSD',
-      dai: 'DAIUSD',
-      usdt: 'USDTUSD'
+      okb: 'OKBUSD', busd: 'BUSDUSD', usdc: 'USDCUSD', dai: 'DAIUSD', usdt: 'USDTUSD'
     };
 
     async function loadDashboard() {
@@ -128,7 +138,7 @@
         const stablecoinIds = ['tether','usd-coin','binance-usd','dai','true-usd','pax-gold','stasis-euro','gemini-dollar','frax'];
         const filtered = data.filter(c => !stablecoinIds.includes(c.id) && c.symbol && /^[a-z0-9]+$/i.test(c.symbol) && c.total_volume > 10000000 && c.current_price > 0.01);
         const sorted = filtered.sort((a, b) => Math.abs(b.price_change_percentage_24h) - Math.abs(a.price_change_percentage_24h));
-        const actionable = sorted.filter(c => ['LONG', 'SELL'].includes(suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price))).slice(0, 9);
+        const actionable = sorted.filter(c => ['LONG', 'SELL'].includes(suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price, c.current_price))).slice(0, 9);
 
         document.getElementById('loading').style.display = 'none';
 
@@ -138,10 +148,13 @@
         }
 
         actionable.forEach(coin => {
+          const spark = coin.sparkline_in_7d?.price || [];
           const symbol = tradingViewSymbolOverrides[coin.symbol.toLowerCase()] || coin.symbol.toUpperCase() + 'USDT';
-          const action = suggestAction(coin.price_change_percentage_24h, coin.sparkline_in_7d?.price);
-          const extremesNote = checkNearExtremes(coin.current_price, coin.sparkline_in_7d?.price);
+          const action = suggestAction(coin.price_change_percentage_24h, spark, coin.current_price);
+          const extremesNote = checkNearExtremes(coin.current_price, spark);
           const changeClass = coin.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400';
+          const ma7 = spark.slice(-7).reduce((a, b) => a + b, 0) / 7;
+          const rsi = calcolaRSI(spark);
 
           const card = document.createElement('a');
           card.href = `https://www.tradingview.com/symbols/${symbol}/`;
@@ -156,6 +169,8 @@
             <p class="text-md">Prezzo: <span class="font-semibold">${formatPrice(coin.current_price)}</span></p>
             <p class="text-md ${changeClass}">Variazione 24h: ${coin.price_change_percentage_24h?.toFixed(2)}%</p>
             <p class="text-sm text-gray-500">Volume 24h: ${formatPrice(coin.total_volume)}</p>
+            <p class="text-sm text-blue-300">Media mobile (MA7): ${formatPrice(ma7)}</p>
+            <p class="text-sm text-purple-300">RSI: ${rsi}</p>
             <p class="text-lg font-bold mt-2 ${action === 'LONG' ? 'text-green-300' : action === 'SELL' ? 'text-red-300' : 'text-gray-400'}">Segnale: ${action}</p>
             ${extremesNote ? `<p class="text-sm text-yellow-400 mt-1">${extremesNote}</p>` : ''}
             <iframe src="https://www.tradingview.com/widgetembed/?symbol=${symbol}&interval=D&theme=dark&style=1&locale=it&toolbarbg=1e293b&hide_top_toolbar=true&saveimage=false&studies=[]" style="width:100%;height:300px;border:none;margin-top:1rem;" allowtransparency="true" scrolling="no"></iframe>
@@ -181,7 +196,7 @@
         const stablecoinIds = ['tether','usd-coin','binance-usd','dai','true-usd','pax-gold','stasis-euro','gemini-dollar','frax'];
         const filtered = data.filter(c => !stablecoinIds.includes(c.id) && c.symbol && /^[a-z0-9]+$/i.test(c.symbol) && c.total_volume > 10000000 && c.current_price > 0.01);
         const sorted = filtered.sort((a, b) => Math.abs(b.price_change_percentage_24h) - Math.abs(a.price_change_percentage_24h));
-        const actionable = sorted.filter(c => ['LONG', 'SELL'].includes(suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price))).slice(0, 9);
+        const actionable = sorted.filter(c => ['LONG', 'SELL'].includes(suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price, c.current_price))).slice(0, 9);
         const parametri = actionable.map(c => `${c.id},${c.current_price}`).join('|');
         const url = `calcolatore.html?dati=${encodeURIComponent(parametri)}`;
         window.open(url, '_blank');
