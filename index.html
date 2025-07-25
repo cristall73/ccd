@@ -67,7 +67,7 @@
       const hours = Math.floor(diffMs / 3600000);
       const minutes = Math.floor((diffMs % 3600000) / 60000);
       const seconds = Math.floor((diffMs % 60000) / 1000);
-      document.getElementById('countdown').innerText = `Prossimo aggiornamento in ${hours}h ${minutes}m ${seconds}s (UTC)`;
+      document.getElementById('countdown').innerText = Prossimo aggiornamento in ${hours}h ${minutes}m ${seconds}s (UTC);
       if (diffMs <= 1000) {
         clearInterval(countdownInterval);
         loadDashboard();
@@ -271,11 +271,11 @@
           const rsi = calcolaRSI(spark);
 
           const card = document.createElement('a');
-          card.href = `https://www.tradingview.com/symbols/${symbol}/`;
+          card.href = https://www.tradingview.com/symbols/${symbol}/;
           card.target = '_blank';
           card.rel = 'noopener noreferrer';
           card.className = 'bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl flex flex-col justify-between';
-          card.innerHTML = `
+          card.innerHTML = 
             <div class="flex items-center mb-3">
               <img src="${coin.image}" alt="Logo ${coin.name}" class="w-8 h-8 mr-3 rounded-full" />
               <h2 class="text-xl font-bold">${coin.name} <span class="text-gray-400 text-sm">(${coin.symbol.toUpperCase()})</span></h2>
@@ -286,21 +286,21 @@
             <p class="text-sm text-blue-300">Media mobile (MA7): ${formatPrice(ma7)}</p>
             <p class="text-sm text-purple-300">RSI: ${rsi}</p>
             <p class="text-lg font-bold mt-2 ${action === 'COMPRA' ? 'text-green-300' : action === 'VENDI' ? 'text-red-300' : 'text-gray-400'}">Segnale: ${action}</p>
-            ${extremesNote ? `<p class="text-sm text-yellow-400 mt-1">${extremesNote}</p>` : ''}
+            ${extremesNote ? <p class="text-sm text-yellow-400 mt-1">${extremesNote}</p> : ''}
             <iframe src="https://www.tradingview.com/widgetembed/?symbol=${symbol}&interval=D&theme=dark&style=1&locale=it&toolbarbg=1e293b&hide_top_toolbar=true&saveimage=false&studies=[]" style="width:100%;height:300px;border:none;margin-top:1rem;" allowtransparency="true" scrolling="no"></iframe>
                 <!-- Mostra la percentuale di profitto simulata direttamente sulla scheda -->
-                ${coin.simulatedProfit !== null && coin.simulatedInitialInvestmentAmount > 0 ? `<p class="text-md font-bold mt-2 ${coin.simulatedProfit >= 0 ? 'text-green-400' : 'text-red-400'}">Simulazione 7gg: ${((coin.simulatedProfit / coin.simulatedInitialInvestmentAmount) * 100).toFixed(2)}%</p>` : ''}
+                ${coin.simulatedProfit !== null && coin.simulatedInitialInvestmentAmount > 0 ? <p class="text-md font-bold mt-2 ${coin.simulatedProfit >= 0 ? 'text-green-400' : 'text-red-400'}">Simulazione 7gg: ${((coin.simulatedProfit / coin.simulatedInitialInvestmentAmount) * 100).toFixed(2)}%</p> : ''}
             <!-- Nuovo pulsante per la simulazione del backtesting a 7 giorni, ora chiama la funzione di visualizzazione -->
             <button onclick="event.preventDefault(); event.stopPropagation(); runMiniBacktestAndDisplay(${JSON.stringify(coin).replace(/"/g, '&quot;')})" class="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105 w-full">
               Dettagli Simulazione 7 giorni
             </button>
-          `;
+          ;
           document.getElementById('dashboard').appendChild(card);
         });
         const now = new Date();
-        document.getElementById('last-update').innerText = `Ultimo aggiornamento: ${now.toLocaleTimeString('it-IT')} del ${now.toLocaleDateString('it-IT')}`;
+        document.getElementById('last-update').innerText = Ultimo aggiornamento: ${now.toLocaleTimeString('it-IT')} del ${now.toLocaleDateString('it-IT')};
       } catch (err) {
-        document.getElementById('loading').innerText = `Errore nel caricamento: ${err.message}`;
+        document.getElementById('loading').innerText = Errore nel caricamento: ${err.message};
         document.getElementById('loading').style.color = 'red';
       }
     }
@@ -319,8 +319,8 @@
         // Qui, il calcolatore trade continuerà a usare la logica di suggestAction per coerenza.
         // Se si volesse che il calcolatore usi solo le coin profittevoli simulate, questa logica andrebbe replicata qui.
         const actionable = sorted.filter(c => ['COMPRA', 'VENDI'].includes(suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price, c.current_price, c.total_volume))).slice(0, 9);
-        const parametri = actionable.map(c => `${c.id},${c.current_price}`).join('|');
-        const url = `calcolatore.html?dati=${encodeURIComponent(parametri)}`;
+        const parametri = actionable.map(c => ${c.id},${c.current_price}).join('|');
+        const url = calcolatore.html?dati=${encodeURIComponent(parametri)};
         window.open(url, '_blank');
       });
     }
@@ -340,7 +340,7 @@
     function showBacktestModal(coinName, resultsHtml) {
         document.getElementById('backtestModal').classList.remove('hidden');
         const modalContent = document.getElementById('backtestModalContent');
-        document.getElementById('backtestModalContent').querySelector('h3').innerText = `Simulazione Storica (7 giorni) per ${coinName}`;
+        document.getElementById('backtestModalContent').querySelector('h3').innerText = Simulazione Storica (7 giorni) per ${coinName};
         document.getElementById('backtestResults').innerHTML = resultsHtml;
         // Animazione del modale
         setTimeout(() => {
@@ -358,44 +358,44 @@
 
         // Se i dati per la simulazione non erano sufficienti al momento del calcolo, gestiamo qui
         if (totalProfitLoss === null) { 
-            showBacktestModal(coin.name, `<p class="text-red-400">Dati insufficienti per la simulazione (necessari almeno 15 punti prezzo nella sparkline di 7 giorni).</p>`);
+            showBacktestModal(coin.name, <p class="text-red-400">Dati insufficienti per la simulazione (necessari almeno 15 punti prezzo nella sparkline di 7 giorni).</p>);
             return;
         }
 
-        let resultsHtml = `<p class="text-md font-semibold mb-2">Risultato della simulazione per ${coin.name}:</p>`;
+        let resultsHtml = <p class="text-md font-semibold mb-2">Risultato della simulazione per ${coin.name}:</p>;
         if (trades.length === 0) {
-            resultsHtml += `<p class="text-yellow-400">Nessun segnale di COMPRA/VENDI generato negli ultimi 7 giorni con la strategia attuale.</p>`;
+            resultsHtml += <p class="text-yellow-400">Nessun segnale di COMPRA/VENDI generato negli ultimi 7 giorni con la strategia attuale.</p>;
         } else {
-            resultsHtml += `<ul class="list-disc list-inside space-y-1 mb-3">`;
+            resultsHtml += <ul class="list-disc list-inside space-y-1 mb-3">;
             trades.forEach(trade => {
                 if (trade.type === 'COMPRA') {
                     // Modificato per mostrare le unità acquistate e l'investimento fisso
-                    resultsHtml += `<li class="text-green-300">Acquisto simulato di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} (Investimento: ${formatPrice(trade.investment)})</li>`;
+                    resultsHtml += <li class="text-green-300">Acquisto simulato di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} (Investimento: ${formatPrice(trade.investment)})</li>;
                 } else if (trade.type === 'VENDI') {
                     const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400';
-                    resultsHtml += `<li class="text-red-300">Vendita (Segnale) di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>`;
+                    resultsHtml += <li class="text-red-300">Vendita (Segnale) di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>;
                 } else if (trade.type === 'CHIUSURA_SL') {
                     const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'; 
-                    resultsHtml += `<li class="text-red-500">Vendita (Stop Loss) di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>`;
+                    resultsHtml += <li class="text-red-500">Vendita (Stop Loss) di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>;
                 } else if (trade.type === 'CHIUSURA_TP') {
                     const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'; 
-                    resultsHtml += `<li class="text-green-500">Vendita (Take Profit) di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>`;
+                    resultsHtml += <li class="text-green-500">Vendita (Take Profit) di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>;
                 } else if (trade.type === 'CHIUSURA_FINALE') {
                      const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400';
-                    resultsHtml += `<li class="text-gray-400">Chiusura posizione finale di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>`;
+                    resultsHtml += <li class="text-gray-400">Chiusura posizione finale di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>;
                 }
             });
-            resultsHtml += `</ul>`;
+            resultsHtml += </ul>;
 
             const totalClass = totalProfitLoss >= 0 ? 'text-green-400' : 'text-red-400';
-            resultsHtml += `<p class="text-lg font-bold mt-4">Profitto/Perdita Totale Simulato: <span class="${totalClass}">${totalProfitLoss.toFixed(4)} USD</span></p>`;
+            resultsHtml += <p class="text-lg font-bold mt-4">Profitto/Perdita Totale Simulato: <span class="${totalClass}">${totalProfitLoss.toFixed(4)} USD</span></p>;
             
             // Calcolo corretto della percentuale basato sull'investimento iniziale fisso (100 USD)
             if (initialInvestmentAmount > 0) {
                 const percentagePL = (totalProfitLoss / initialInvestmentAmount) * 100; 
-                resultsHtml += `<p class="text-md">Variazione Percentuale su ${initialInvestmentAmount} USD di capitale: <span class="${totalClass}">${percentagePL.toFixed(2)}%</span></p>`;
+                resultsHtml += <p class="text-md">Variazione Percentuale su ${initialInvestmentAmount} USD di capitale: <span class="${totalClass}">${percentagePL.toFixed(2)}%</span></p>;
             } else {
-                resultsHtml += `<p class="text-yellow-400">Nessun investimento iniziale simulato per calcolare la percentuale.</p>`;
+                resultsHtml += <p class="text-yellow-400">Nessun investimento iniziale simulato per calcolare la percentuale.</p>;
             }
         }
 
