@@ -1,199 +1,141 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Dashboard per analizzare le principali criptovalute volatili, escluse le stablecoin." />
-  <title>Cristall Crypto Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Stili per la tabella */
-    .table-container {
-      overflow-x: auto; /* Permette lo scroll orizzontale su schermi piccoli */
-      -webkit-overflow-scrolling: touch; /* Migliora lo scrolling su iOS */
-    }
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 700px; /* Assicura che la tabella non si restringa troppo */
-    }
-    .data-table th, .data-table td {
-      padding: 12px 15px;
-      text-align: left;
-      border-bottom: 1px solid #2d3748; /* gray-800 */
-    }
-    .data-table th {
-      background-color: #1a202c; /* gray-900 */
-      color: #90cdf4; /* blue-300 */
-      font-weight: bold;
-      text-transform: uppercase;
-      font-size: 0.85rem;
-    }
-    .data-table tbody tr:hover {
-      background-color: #2d3748; /* gray-800 */
-    }
-    .data-table tbody tr:nth-child(even) {
-      background-color: #1f2937; /* gray-800 leggermente più chiaro per striatura */
-    }
-    .signal-buy {
-      color: #68d391; /* green-300 */
-      font-weight: bold;
-    }
-    .signal-sell {
-      color: #fc8181; /* red-300 */
-      font-weight: bold;
-    }
-    .signal-neutral {
-      color: #a0aec0; /* gray-400 */
-    }
-    .profit-positive {
-      color: #68d391; /* green-400 */
-    }
-    .profit-negative {
-      color: #fc8181; /* red-400 */
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Dashboard per analizzare le principali criptovalute volatili, escluse le stablecoin." />
+  <title>Cristall Crypto Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white font-sans">
-  <div class="p-4 max-w-7xl mx-auto">
-    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
-      <h1 class="text-3xl sm:text-4xl font-extrabold text-blue-400">Cristall Crypto Dashboard</h1>
-      <div class="flex flex-wrap justify-center gap-4 mb-6">
-        <button onclick="manualRefresh()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
-          Aggiorna Manualmente
-        </button>
-        <a href="https://cristall73.github.io/te3tm10/" target="_blank" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-6 rounded-lg shadow-md transition-transform hover:scale-105">
-          Bitcoin Cristall Clock
-        </a>
-        <a href="https://www.blockchaincenter.net/en/bitcoin-rainbow-chart/" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
-          BTC Rainbow Chart
-        </a>
-        <a href="https://www.bitcoinmagazinepro.com/charts/mvrv-zscore/" target="_blank" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
-          Bitcoin: MVRV Z-Score
-        </a>
-        <a href="https://cryptobubbles.net/" target="_blank" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
-          Crypto Bubbles
-        </a>
-        <a href="https://coinmarketcap.com/" target="_blank" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
-          Fear & Greed
-        </a>
-        <button onclick="apriCalcolatore()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
-          Calcolatore Trade
-        </button>
-      </div>
-    </div>
+  <div class="p-4 max-w-7xl mx-auto">
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-blue-400">Cristall Crypto Dashboard</h1>
+      <div class="flex flex-wrap justify-center gap-4 mb-6">
+        <button onclick="manualRefresh()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+          Aggiorna Manualmente
+        </button>
+        <a href="https://cristall73.github.io/te3tm10/" target="_blank" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-6 rounded-lg shadow-md transition-transform hover:scale-105">
+          Bitcoin Cristall Clock
+        </a>
+        <a href="https://www.blockchaincenter.net/en/bitcoin-rainbow-chart/" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+          BTC Rainbow Chart
+        </a>
+        <a href="https://www.bitcoinmagazinepro.com/charts/mvrv-zscore/" target="_blank" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+          Bitcoin: MVRV Z-Score
+        </a>
+        <a href="https://cryptobubbles.net/" target="_blank" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+          Crypto Bubbles
+        </a>
+        <a href="https://coinmarketcap.com/" target="_blank" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+          Fear & Greed
+        </a>
+        <button onclick="apriCalcolatore()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+          Calcolatore Trade
+        </button>
+      </div>
+    </div>
 
-    <div class="mb-2 text-sm text-gray-300">
-      <p class="text-base text-gray-400">Visualizzazione delle criptovalute più volatili e liquide (escluse le stablecoin) con segnali operativi.</p>
-    </div>
-    <div class="mb-6 text-sm text-gray-300 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
-      <p id="countdown" class="text-base text-blue-300"></p>
-      <p id="last-update" class="text-base"></p>
-    </div>
+    <div class="mb-2 text-sm text-gray-300">
+      <p class="text-base text-gray-400">Visualizzazione delle criptovalute più volatili e liquide (escluse le stablecoin) con segnali operativi.</p>
+    </div>
+    <div class="mb-6 text-sm text-gray-300 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+      <p id="countdown" class="text-base text-blue-300"></p>
+      <p id="last-update" class="text-base"></p>
+    </div>
+    <p id="loading" class="text-lg text-gray-400 text-center py-8 animate-pulse">Analizzando il mercato...</p>
+    <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
 
-    <!-- Nuova sezione per la tabella -->
-    <div class="mb-8 p-4 bg-gray-800 rounded-xl shadow-lg border border-gray-700">
-      <h2 class="text-2xl font-bold text-blue-400 mb-4">Segnali Operativi e Performance Simulate (Ultimi 7 giorni)</h2>
-      <div id="signalsTableContainer" class="table-container">
-        <!-- La tabella verrà inserita qui dal JavaScript -->
-      </div>
-      <p id="noSignalsMessage" class="text-center text-gray-400 mt-4 hidden">Nessun segnale operativo chiaro con simulazione profittevole.</p>
-    </div>
-    <!-- Fine nuova sezione per la tabella -->
+  <script>
+    let countdownInterval;
 
-    <p id="loading" class="text-lg text-gray-400 text-center py-8 animate-pulse">Analizzando il mercato...</p>
-    <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-  </div>
+    function getNext4HourTimestamp() {
+      const now = new Date();
+      const next = new Date(now);
+      const hours = now.getUTCHours();
+      const nextHour = Math.ceil((hours + 1) / 4) * 4;
+      next.setUTCHours(nextHour, 0, 0, 0);
+      if (next <= now) next.setUTCHours(nextHour + 4, 0, 0, 0);
+      return next;
+    }
 
-  <script>
-    let countdownInterval;
+    function updateCountdown() {
+      const now = new Date();
+      const next = getNext4HourTimestamp();
+      const diffMs = next - now;
+      const hours = Math.floor(diffMs / 3600000);
+      const minutes = Math.floor((diffMs % 3600000) / 60000);
+      const seconds = Math.floor((diffMs % 60000) / 1000);
+      document.getElementById('countdown').innerText = `Prossimo aggiornamento in ${hours}h ${minutes}m ${seconds}s (UTC)`;
+      if (diffMs <= 1000) {
+        clearInterval(countdownInterval);
+        loadDashboard();
+        startCountdown();
+      }
+    }
 
-    function getNext4HourTimestamp() {
-      const now = new Date();
-      const next = new Date(now);
-      const hours = now.getUTCHours();
-      const nextHour = Math.ceil((hours + 1) / 4) * 4;
-      next.setUTCHours(nextHour, 0, 0, 0);
-      if (next <= now) next.setUTCHours(nextHour + 4, 0, 0, 0);
-      return next;
-    }
+    function startCountdown() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(updateCountdown, 1000);
+    }
+    startCountdown();
 
-    function updateCountdown() {
-      const now = new Date();
-      const next = getNext4HourTimestamp();
-      const diffMs = next - now;
-      const hours = Math.floor(diffMs / 3600000);
-      const minutes = Math.floor((diffMs % 3600000) / 60000);
-      const seconds = Math.floor((diffMs % 60000) / 1000);
-      document.getElementById('countdown').innerText = `Prossimo aggiornamento in ${hours}h ${minutes}m ${seconds}s (UTC)`;
-      if (diffMs <= 1000) {
-        clearInterval(countdownInterval);
-        loadDashboard();
-        startCountdown();
-      }
-    }
+    async function fetchCryptoData() {
+      // Recupera 1000 coin
+      const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=1000&page=1&sparkline=true&price_change_percentage=24h');
+      if (!res.ok) throw new Error('Errore nel recupero dei dati');
+      return res.json();
+    }
 
-    function startCountdown() {
-      if (countdownInterval) clearInterval(countdownInterval);
-      countdownInterval = setInterval(updateCountdown, 1000);
-    }
-    startCountdown();
+    function formatPrice(price) {
+      return price?.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 8 }) || 'N/A';
+    }
 
-    async function fetchCryptoData() {
-      // Recupera 1000 coin
-      const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=1000&page=1&sparkline=true&price_change_percentage=24h');
-      if (!res.ok) throw new Error('Errore nel recupero dei dati');
-      return res.json();
-    }
+    function calcolaRSI(prices, period = 14) {
+      if (prices.length < period + 1) return null;
+      let gains = 0, losses = 0;
+      for (let i = 1; i <= period; i++) {
+        const diff = prices[prices.length - i] - prices[prices.length - i - 1];
+        if (diff > 0) gains += diff;
+        else losses -= diff;
+      }
+      const rs = gains / (losses || 1);
+      return Math.round(100 - (100 / (1 + rs)));
+    }
 
-    function formatPrice(price) {
-      return price?.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 8 }) || 'N/A';
-    }
+    // Funzione suggestAction con parametri della strategia aggiornati (volumi rilassati)
+    function suggestAction(change24h, sparkline, currentPrice, totalVolume) {
+      if (!sparkline || sparkline.length < 14) return 'NEUTRO';
+      const ma7 = sparkline.slice(-7).reduce((a, b) => a + b, 0) / 7;
+      const momentum = sparkline.at(-1) - sparkline.at(-3);
+      const rsi = calcolaRSI(sparkline);
 
-    function calcolaRSI(prices, period = 14) {
-      if (prices.length < period + 1) return null;
-      let gains = 0, losses = 0;
-      for (let i = 1; i <= period; i++) {
-        const diff = prices[prices.length - i] - prices[prices.length - i - 1];
-        if (diff > 0) gains += diff;
-        else losses -= diff;
-      }
-      const rs = gains / (losses || 1);
-      return Math.round(100 - (100 / (1 + rs)));
-    }
+      // Volume minimo ridotto a 10 milioni di USD
+      const MIN_VOLUME_FOR_ACTION = 10000000; // 10 milioni di USD
+      if (totalVolume < MIN_VOLUME_FOR_ACTION) return 'NEUTRO';
 
-    // Funzione suggestAction con parametri della strategia aggiornati (volumi rilassati)
-    function suggestAction(change24h, sparkline, currentPrice, totalVolume) {
-      if (!sparkline || sparkline.length < 14) return 'NEUTRO';
-      const ma7 = sparkline.slice(-7).reduce((a, b) => a + b, 0) / 7;
-      const momentum = sparkline.at(-1) - sparkline.at(-3);
-      const rsi = calcolaRSI(sparkline);
+      // Soglie di variazione 24h e RSI rilassate (come nella versione precedente, che andava già bene)
+      if (change24h > 1 && momentum > 0 && currentPrice > ma7 && rsi < 70) return 'COMPRA';
+      if (change24h < -1 && momentum < 0 && currentPrice < ma7 && rsi > 30) return 'VENDI';
+      return 'NEUTRO';
+    }
 
-      // Volume minimo ridotto a 10 milioni di USD
-      const MIN_VOLUME_FOR_ACTION = 10000000; // 10 milioni di USD
-      if (totalVolume < MIN_VOLUME_FOR_ACTION) return 'NEUTRO';
+    function checkNearExtremes(current, sparkline) {
+      if (!sparkline || sparkline.length === 0) return '';
+      const min = Math.min(...sparkline);
+      const max = Math.max(...sparkline);
+      const range = max - min;
+      if (range === 0) return '';
+      const pos = (current - min) / range;
+      if (pos < 0.1) return 'Vicino ai minimi';
+      if (pos > 0.9) return 'Vicino ai massimi';
+      return '';
+    }
 
-      // Soglie di variazione 24h e RSI rilassate (come nella versione precedente, che andava già bene)
-      if (change24h > 1 && momentum > 0 && currentPrice > ma7 && rsi < 70) return 'COMPRA';
-      if (change24h < -1 && momentum < 0 && currentPrice < ma7 && rsi > 30) return 'VENDI';
-      return 'NEUTRO';
-    }
-
-    function checkNearExtremes(current, sparkline) {
-      if (!sparkline || sparkline.length === 0) return '';
-      const min = Math.min(...sparkline);
-      const max = Math.max(...sparkline);
-      const range = max - min;
-      if (range === 0) return '';
-      const pos = (current - min) / range;
-      if (pos < 0.1) return 'Vicino ai minimi';
-      if (pos > 0.9) return 'Vicino ai massimi';
-      return '';
-    }
-
-    const tradingViewSymbolOverrides = {
-      okb: 'OKBUSD', busd: 'BUSDUSD', usdc: 'USDCUSD', dai: 'DAIUSD', usdt: 'USDTUSD'
-    };
+    const tradingViewSymbolOverrides = {
+      okb: 'OKBUSD', busd: 'BUSDUSD', usdc: 'USDCUSD', dai: 'DAIUSD', usdt: 'USDTUSD'
+    };
 
     // Nuova funzione per calcolare il backtesting e ritornare solo i risultati
     function calculateMiniBacktest(coin) {
@@ -274,93 +216,26 @@
             trades.push({ type: 'CHIUSURA_FINALE', price: finalPrice, units: unitsBought, profitLoss: profitLoss, investment: investmentAmountForTrade, index: sparkline.length - 1 });
         }
 
-        return { totalProfitLoss, trades, initialInvestmentAmount: INITIAL_INVESTMENT_PER_TRADE };  
-    }
-
-    // NUOVA FUNZIONE: Genera e popola la tabella dei segnali
-    function populateSignalsTable(actionableCoins) {
-        const tableContainer = document.getElementById('signalsTableContainer');
-        const noSignalsMessage = document.getElementById('noSignalsMessage');
-        tableContainer.innerHTML = ''; // Pulisci il contenuto precedente
-
-        if (actionableCoins.length === 0) {
-            noSignalsMessage.classList.remove('hidden');
-            return;
-        } else {
-            noSignalsMessage.classList.add('hidden');
-        }
-
-        const table = document.createElement('table');
-        table.className = 'data-table'; // Applica stili Tailwind e custom CSS
-
-        // Intestazione della tabella
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th>Coin</th>
-                    <th>Prezzo Attuale</th>
-                    <th>Variazione 24h</th>
-                    <th>Volume 24h</th>
-                    <th>RSI</th>
-                    <th>Segnale</th>
-                    <th>Sim. 7gg %</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        `;
-        const tbody = table.querySelector('tbody');
-
-        actionableCoins.forEach(coin => {
-            const spark = coin.sparkline_in_7d?.price || [];
-            const action = suggestAction(coin.price_change_percentage_24h, spark, coin.current_price, coin.total_volume);
-            const rsi = calcolaRSI(spark);
-            const simulatedProfitPercent = coin.simulatedProfit !== null && coin.simulatedInitialInvestmentAmount > 0
-                ? ((coin.simulatedProfit / coin.simulatedInitialInvestmentAmount) * 100).toFixed(2) + '%'
-                : 'N/A';
-            const signalClass = action === 'COMPRA' ? 'signal-buy' : action === 'VENDI' ? 'signal-sell' : 'signal-neutral';
-            const profitClass = coin.simulatedProfit >= 0 ? 'profit-positive' : 'profit-negative';
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>
-                    <div class="flex items-center">
-                        <img src="${coin.image}" alt="${coin.name}" class="w-6 h-6 mr-2 rounded-full" />
-                        <span class="font-semibold">${coin.symbol.toUpperCase()}</span>
-                    </div>
-                </td>
-                <td>${formatPrice(coin.current_price)}</td>
-                <td class="${coin.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400'}">${coin.price_change_percentage_24h?.toFixed(2)}%</td>
-                <td>${formatPrice(coin.total_volume)}</td>
-                <td>${rsi !== null ? rsi : 'N/A'}</td>
-                <td class="${signalClass}">${action}</td>
-                <td class="${profitClass}">${simulatedProfitPercent}</td>
-            `;
-            tbody.appendChild(row);
-        });
-
-        tableContainer.appendChild(table);
+        return { totalProfitLoss, trades, initialInvestmentAmount: INITIAL_INVESTMENT_PER_TRADE }; 
     }
 
 
-    async function loadDashboard() {
-      document.getElementById('loading').style.display = 'block';
-      document.getElementById('dashboard').innerHTML = '';
-      document.getElementById('signalsTableContainer').innerHTML = ''; // Pulisci la tabella
-      document.getElementById('noSignalsMessage').classList.add('hidden'); // Nascondi il messaggio
-
-      try {
-        const data = await fetchCryptoData();
-        const stablecoinIds = ['tether','usd-coin','binance-usd','dai','true-usd','pax-gold','stasis-euro','gemini-dollar','frax'];
-        
+    async function loadDashboard() {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('dashboard').innerHTML = '';
+      try {
+        const data = await fetchCryptoData();
+        const stablecoinIds = ['tether','usd-coin','binance-usd','dai','true-usd','pax-gold','stasis-euro','gemini-dollar','frax'];
+        
         // 1. Filtra le coin iniziali per criteri di base
-        let filteredAndProcessed = data.filter(c => !stablecoinIds.includes(c.id) && c.symbol && /^[a-z0-9]+$/i.test(c.symbol) && c.total_volume > 10000000 && c.current_price > 0.01);
+        let filteredAndProcessed = data.filter(c => !stablecoinIds.includes(c.id) && c.symbol && /^[a-z0-9]+$/i.test(c.symbol) && c.total_volume > 10000000 && c.current_price > 0.01);
 
         // 2. Calcola il profitto simulato per ciascuna coin e memorizzalo
         filteredAndProcessed = filteredAndProcessed.map(coin => {
-            const { totalProfitLoss, trades, initialInvestmentAmount } = calculateMiniBacktest(coin);  
-            coin.simulatedProfit = totalProfitLoss;  
-            coin.simulatedTrades = trades;  
-            coin.simulatedInitialInvestmentAmount = initialInvestmentAmount;  
+            const { totalProfitLoss, trades, initialInvestmentAmount } = calculateMiniBacktest(coin); 
+            coin.simulatedProfit = totalProfitLoss; 
+            coin.simulatedTrades = trades; 
+            coin.simulatedInitialInvestmentAmount = initialInvestmentAmount; 
             return coin;
         });
 
@@ -373,85 +248,82 @@
                     c.simulatedProfit !== null &&
                     c.simulatedInitialInvestmentAmount > 0 &&
                     (c.simulatedProfit / c.simulatedInitialInvestmentAmount * 100) >= MIN_SIMULATED_PROFIT_PERCENT &&
-                    ['COMPRA', 'VENDI'].includes(currentAction)  
+                    ['COMPRA', 'VENDI'].includes(currentAction) 
                 );
             })
             .sort((a, b) => b.simulatedProfit - a.simulatedProfit) // Ordina per profitto simulato più alto
-            .slice(0, 9);  
+            .slice(0, 9); 
 
-        document.getElementById('loading').style.display = 'none';
+        document.getElementById('loading').style.display = 'none';
 
-        // Popola la nuova tabella dei segnali
-        populateSignalsTable(actionable);
+        if (!actionable.length) {
+          document.getElementById('dashboard').innerHTML = '<p class="text-center text-gray-400">Nessuna coin con simulazione profittevole di almeno il 3% E segnale operativo chiaro negli ultimi 7 giorni con la strategia attuale. Riprova più tardi.</p>';
+          return;
+        }
 
-        if (!actionable.length) {
-          document.getElementById('dashboard').innerHTML = '<p class="text-center text-gray-400">Nessuna coin con simulazione profittevole di almeno il 3% E segnale operativo chiaro negli ultimi 7 giorni con la strategia attuale. Riprova più tardi.</p>';
-          return;
-        }
+        actionable.forEach(coin => {
+          const spark = coin.sparkline_in_7d?.price || [];
+          const symbol = tradingViewSymbolOverrides[coin.symbol.toLowerCase()] || coin.symbol.toUpperCase() + 'USDT';
+          const action = suggestAction(coin.price_change_percentage_24h, spark, coin.current_price, coin.total_volume);
+          const extremesNote = checkNearExtremes(coin.current_price, spark);
+          const changeClass = coin.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400';
+          const ma7 = spark.slice(-7).reduce((a, b) => a + b, 0) / 7;
+          const rsi = calcolaRSI(spark);
 
-        actionable.forEach(coin => {
-          const spark = coin.sparkline_in_7d?.price || [];
-          const symbol = tradingViewSymbolOverrides[coin.symbol.toLowerCase()] || coin.symbol.toUpperCase() + 'USDT';
-          const action = suggestAction(coin.price_change_percentage_24h, spark, coin.current_price, coin.total_volume);
-          const extremesNote = checkNearExtremes(coin.current_price, spark);
-          const changeClass = coin.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400';
-          const ma7 = spark.slice(-7).reduce((a, b) => a + b, 0) / 7;
-          const rsi = calcolaRSI(spark);
-
-          const card = document.createElement('a');
-          card.href = `https://www.tradingview.com/symbols/${symbol}/`;
-          card.target = '_blank';
-          card.rel = 'noopener noreferrer';
-          card.className = 'bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl flex flex-col justify-between';
-          card.innerHTML = `
-            <div class="flex items-center mb-3">
-              <img src="${coin.image}" alt="Logo ${coin.name}" class="w-8 h-8 mr-3 rounded-full" />
-              <h2 class="text-xl font-bold">${coin.name} <span class="text-gray-400 text-sm">(${coin.symbol.toUpperCase()})</span></h2>
-            </div>
-            <p class="text-md">Prezzo: <span class="font-semibold">${formatPrice(coin.current_price)}</span></p>
-            <p class="text-md ${changeClass}">Variazione 24h: ${coin.price_change_percentage_24h?.toFixed(2)}%</p>
-            <p class="text-sm text-gray-500">Volume 24h: ${formatPrice(coin.total_volume)}</p>
-            <p class="text-sm text-blue-300">Media mobile (MA7): ${formatPrice(ma7)}</p>
-            <p class="text-sm text-purple-300">RSI: ${rsi}</p>
-            <p class="text-lg font-bold mt-2 ${action === 'COMPRA' ? 'text-green-300' : action === 'VENDI' ? 'text-red-300' : 'text-gray-400'}">Segnale: ${action}</p>
-            ${extremesNote ? `<p class="text-sm text-yellow-400 mt-1">${extremesNote}</p>` : ''}
-            <iframe src="https://www.tradingview.com/widgetembed/?symbol=${symbol}&interval=D&theme=dark&style=1&locale=it&toolbarbg=1e293b&hide_top_toolbar=true&saveimage=false&studies=[]" style="width:100%;height:300px;border:none;margin-top:1rem;" allowtransparency="true" scrolling="no"></iframe>
+          const card = document.createElement('a');
+          card.href = `https://www.tradingview.com/symbols/${symbol}/`;
+          card.target = '_blank';
+          card.rel = 'noopener noreferrer';
+          card.className = 'bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl flex flex-col justify-between';
+          card.innerHTML = `
+            <div class="flex items-center mb-3">
+              <img src="${coin.image}" alt="Logo ${coin.name}" class="w-8 h-8 mr-3 rounded-full" />
+              <h2 class="text-xl font-bold">${coin.name} <span class="text-gray-400 text-sm">(${coin.symbol.toUpperCase()})</span></h2>
+            </div>
+            <p class="text-md">Prezzo: <span class="font-semibold">${formatPrice(coin.current_price)}</span></p>
+            <p class="text-md ${changeClass}">Variazione 24h: ${coin.price_change_percentage_24h?.toFixed(2)}%</p>
+            <p class="text-sm text-gray-500">Volume 24h: ${formatPrice(coin.total_volume)}</p>
+            <p class="text-sm text-blue-300">Media mobile (MA7): ${formatPrice(ma7)}</p>
+            <p class="text-sm text-purple-300">RSI: ${rsi}</p>
+            <p class="text-lg font-bold mt-2 ${action === 'COMPRA' ? 'text-green-300' : action === 'VENDI' ? 'text-red-300' : 'text-gray-400'}">Segnale: ${action}</p>
+            ${extremesNote ? `<p class="text-sm text-yellow-400 mt-1">${extremesNote}</p>` : ''}
+            <iframe src="https://www.tradingview.com/widgetembed/?symbol=${symbol}&interval=D&theme=dark&style=1&locale=it&toolbarbg=1e293b&hide_top_toolbar=true&saveimage=false&studies=[]" style="width:100%;height:300px;border:none;margin-top:1rem;" allowtransparency="true" scrolling="no"></iframe>
                 <!-- Mostra la percentuale di profitto simulata direttamente sulla scheda -->
                 ${coin.simulatedProfit !== null && coin.simulatedInitialInvestmentAmount > 0 ? `<p class="text-md font-bold mt-2 ${coin.simulatedProfit >= 0 ? 'text-green-400' : 'text-red-400'}">Simulazione 7gg: ${((coin.simulatedProfit / coin.simulatedInitialInvestmentAmount) * 100).toFixed(2)}%</p>` : ''}
             <!-- Nuovo pulsante per la simulazione del backtesting a 7 giorni, ora chiama la funzione di visualizzazione -->
             <button onclick="event.preventDefault(); event.stopPropagation(); runMiniBacktestAndDisplay(${JSON.stringify(coin).replace(/"/g, '&quot;')})" class="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105 w-full">
               Dettagli Simulazione 7 giorni
             </button>
-          `;
-          document.getElementById('dashboard').appendChild(card);
-        });
-        const now = new Date();
-        document.getElementById('last-update').innerText = `Ultimo aggiornamento: ${now.toLocaleTimeString('it-IT')} del ${now.toLocaleDateString('it-IT')}`;
-      } catch (err) {
-        document.getElementById('loading').innerText = `Errore nel caricamento: ${err.message}`;
-        document.getElementById('loading').style.color = 'red';
-      }
-    }
+          `;
+          document.getElementById('dashboard').appendChild(card);
+        });
+        const now = new Date();
+        document.getElementById('last-update').innerText = `Ultimo aggiornamento: ${now.toLocaleTimeString('it-IT')} del ${now.toLocaleDateString('it-IT')}`;
+      } catch (err) {
+        document.getElementById('loading').innerText = `Errore nel caricamento: ${err.message}`;
+        document.getElementById('loading').style.color = 'red';
+      }
+    }
 
-    function manualRefresh() {
-      document.getElementById('loading').style.display = 'block';
-      document.getElementById('loading').innerText = 'Aggiornamento manuale in corso...';
-      loadDashboard();
-    }
+    function manualRefresh() {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('loading').innerText = 'Aggiornamento manuale in corso...';
+      loadDashboard();
+    }
 
-    function apriCalcolatore() {
-      fetchCryptoData().then(data => {
-        const stablecoinIds = ['tether','usd-coin','binance-usd','dai','true-usd','pax-gold','stasis-euro','gemini-dollar','frax'];
-        const filtered = data.filter(c => !stablecoinIds.includes(c.id) && c.symbol && /^[a-z0-9]+$/i.test(c.symbol) && c.total_volume > 10000000 && c.current_price > 0.01);
-        const sorted = filtered.sort((a, b) => Math.abs(b.price_change_percentage_24h) - Math.abs(a.price_change_percentage_24h));
-        // Qui, il calcolatore trade continuerà a usare la logica di suggestAction per coerenza.
+    function apriCalcolatore() {
+      fetchCryptoData().then(data => {
+        const stablecoinIds = ['tether','usd-coin','binance-usd','dai','true-usd','pax-gold','stasis-euro','gemini-dollar','frax'];
+        const filtered = data.filter(c => !stablecoinIds.includes(c.id) && c.symbol && /^[a-z0-9]+$/i.test(c.symbol) && c.total_volume > 10000000 && c.current_price > 0.01);
+        const sorted = filtered.sort((a, b) => Math.abs(b.price_change_percentage_24h) - Math.abs(a.price_change_percentage_24h));
+        // Qui, il calcolatore trade continuerà a usare la logica di suggestAction per coerenza.
         // Se si volesse che il calcolatore usi solo le coin profittevoli simulate, questa logica andrebbe replicata qui.
-        const actionable = sorted.filter(c => ['COMPRA', 'VENDI'].includes(suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price, c.current_price, c.total_volume))).slice(0, 9);
-        const parametri = actionable.map(c => `${c.id},${c.current_price}`).join('|');
-        const url = `calcolatore.html?dati=${encodeURIComponent(parametri)}`;
-        window.open(url, '_blank');
-      });
-    }
+        const actionable = sorted.filter(c => ['COMPRA', 'VENDI'].includes(suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price, c.current_price, c.total_volume))).slice(0, 9);
+        const parametri = actionable.map(c => `${c.id},${c.current_price}`).join('|');
+        const url = `calcolatore.html?dati=${encodeURIComponent(parametri)}`;
+        window.open(url, '_blank');
+      });
+    }
 
     // Funzione per chiudere il modal del backtesting
     function closeBacktestModal() {
@@ -485,7 +357,7 @@
         const initialInvestmentAmount = coin.simulatedInitialInvestmentAmount;
 
         // Se i dati per la simulazione non erano sufficienti al momento del calcolo, gestiamo qui
-        if (totalProfitLoss === null) {  
+        if (totalProfitLoss === null) { 
             showBacktestModal(coin.name, `<p class="text-red-400">Dati insufficienti per la simulazione (necessari almeno 15 punti prezzo nella sparkline di 7 giorni).</p>`);
             return;
         }
@@ -503,13 +375,13 @@
                     const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400';
                     resultsHtml += `<li class="text-red-300">Vendita (Segnale) di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>`;
                 } else if (trade.type === 'CHIUSURA_SL') {
-                    const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400';  
+                    const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'; 
                     resultsHtml += `<li class="text-red-500">Vendita (Stop Loss) di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>`;
                 } else if (trade.type === 'CHIUSURA_TP') {
-                    const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400';  
+                    const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'; 
                     resultsHtml += `<li class="text-green-500">Vendita (Take Profit) di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>`;
                 } else if (trade.type === 'CHIUSURA_FINALE') {
-                        const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400';
+                     const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400';
                     resultsHtml += `<li class="text-gray-400">Chiusura posizione finale di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>`;
                 }
             });
@@ -520,7 +392,7 @@
             
             // Calcolo corretto della percentuale basato sull'investimento iniziale fisso (100 USD)
             if (initialInvestmentAmount > 0) {
-                const percentagePL = (totalProfitLoss / initialInvestmentAmount) * 100;  
+                const percentagePL = (totalProfitLoss / initialInvestmentAmount) * 100; 
                 resultsHtml += `<p class="text-md">Variazione Percentuale su ${initialInvestmentAmount} USD di capitale: <span class="${totalClass}">${percentagePL.toFixed(2)}%</span></p>`;
             } else {
                 resultsHtml += `<p class="text-yellow-400">Nessun investimento iniziale simulato per calcolare la percentuale.</p>`;
@@ -531,8 +403,8 @@
     }
 
 
-    loadDashboard();
-  </script>
+    loadDashboard();
+  </script>
 
 <!-- Modal per il Backtesting -->
 <div id="backtestModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
