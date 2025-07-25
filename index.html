@@ -82,7 +82,8 @@
     startCountdown();
 
     async function fetchCryptoData() {
-      const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=true&price_change_percentage=24h');
+      // Recupera 1000 coin
+      const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=1000&page=1&sparkline=true&price_change_percentage=24h');
       if (!res.ok) throw new Error('Errore nel recupero dei dati');
       return res.json();
     }
@@ -103,15 +104,20 @@
       return Math.round(100 - (100 / (1 + rs)));
     }
 
-    // Modificata la funzione per usare "COMPRA" e "VENDI"
-    function suggestAction(change24h, sparkline, currentPrice) {
+    // Funzione suggestAction con parametri della strategia aggiornati (volumi rilassati)
+    function suggestAction(change24h, sparkline, currentPrice, totalVolume) {
       if (!sparkline || sparkline.length < 14) return 'NEUTRO';
       const ma7 = sparkline.slice(-7).reduce((a, b) => a + b, 0) / 7;
       const momentum = sparkline.at(-1) - sparkline.at(-3);
       const rsi = calcolaRSI(sparkline);
 
-      if (change24h > 1 && momentum > 0 && currentPrice > ma7 && rsi < 70) return 'COMPRA'; // Cambiato da 'LONG'
-      if (change24h < -1 && momentum < 0 && currentPrice < ma7 && rsi > 30) return 'VENDI'; // Cambiato da 'SELL'
+      // Volume minimo ridotto a 10 milioni di USD
+      const MIN_VOLUME_FOR_ACTION = 10000000; // 10 milioni di USD
+      if (totalVolume < MIN_VOLUME_FOR_ACTION) return 'NEUTRO';
+
+      // Soglie di variazione 24h e RSI rilassate (come nella versione precedente, che andava già bene)
+      if (change24h > 1 && momentum > 0 && currentPrice > ma7 && rsi < 70) return 'COMPRA';
+      if (change24h < -1 && momentum < 0 && currentPrice < ma7 && rsi > 30) return 'VENDI';
       return 'NEUTRO';
     }
 
@@ -131,27 +137,134 @@
       okb: 'OKBUSD', busd: 'BUSDUSD', usdc: 'USDCUSD', dai: 'DAIUSD', usdt: 'USDTUSD'
     };
 
+    // Nuova funzione per calcolare il backtesting e ritornare solo i risultati
+    function calculateMiniBacktest(coin) {
+        const sparkline = coin.sparkline_in_7d?.price || [];
+        if (sparkline.length < 15) {
+            return { totalProfitLoss: null, trades: [], initialInvestmentAmount: 0 }; // Dati insufficienti
+        }
+
+        let totalProfitLoss = 0;
+        let inTrade = false;
+        let unitsBought = 0; // Quantità di coin acquistate
+        let investmentAmountForTrade = 0; // Importo investito per il trade corrente
+
+        const INITIAL_INVESTMENT_PER_TRADE = 100; // Fisso a 100 USD per ogni simulazione di trade
+        const trades = [];
+
+        const STOP_LOSS_PERCENT = 0.03; // 3% di perdita massima
+        const TAKE_PROFIT_PERCENT = 0.05; // 5% di guadagno target
+
+        // Itera sulla sparkline per simulare il trading
+        for (let i = 1; i < sparkline.length; i++) {
+            const currentPrice = sparkline[i];
+            const simulated24hChange = ((currentPrice - sparkline[i - 1]) / sparkline[i - 1]) * 100;
+            const historicalSparklineSegment = sparkline.slice(0, i + 1);
+
+            // Se siamo in un trade, controlliamo prima Stop Loss o Take Profit
+            if (inTrade) {
+                const currentTradeValue = unitsBought * currentPrice;
+                const profitLossOnCurrentTrade = currentTradeValue - investmentAmountForTrade;
+                const profitLossPercentage = profitLossOnCurrentTrade / investmentAmountForTrade;
+
+                if (profitLossPercentage <= -STOP_LOSS_PERCENT) {
+                    // Stop Loss Triggered
+                    inTrade = false;
+                    totalProfitLoss += profitLossOnCurrentTrade;
+                    trades.push({ type: 'CHIUSURA_SL', price: currentPrice, units: unitsBought, profitLoss: profitLossOnCurrentTrade, investment: investmentAmountForTrade, index: i });
+                    unitsBought = 0; // Reset unità
+                    investmentAmountForTrade = 0; // Reset investimento
+                    continue; // Passa al prossimo punto dopo aver chiuso il trade
+                } else if (profitLossPercentage >= TAKE_PROFIT_PERCENT) {
+                    // Take Profit Triggered
+                    inTrade = false;
+                    totalProfitLoss += profitLossOnCurrentTrade;
+                    trades.push({ type: 'CHIUSURA_TP', price: currentPrice, units: unitsBought, profitLoss: profitLossOnCurrentTrade, investment: investmentAmountForTrade, index: i });
+                    unitsBought = 0; // Reset unità
+                    investmentAmountForTrade = 0; // Reset investimento
+                    continue; // Passa al prossimo punto dopo aver chiuso il trade
+                }
+            }
+            
+            // Solo se non siamo usciti per SL/TP, controlliamo i segnali di strategia
+            const action = suggestAction(simulated24hChange, historicalSparklineSegment, currentPrice, coin.total_volume);
+
+            if (action === 'COMPRA' && !inTrade) {
+                // Se riceviamo un segnale di COMPRA e non siamo già in posizione
+                inTrade = true;
+                investmentAmountForTrade = INITIAL_INVESTMENT_PER_TRADE; // Investiamo 100 USD
+                unitsBought = INITIAL_INVESTMENT_PER_TRADE / currentPrice; // Quante unità di coin compriamo con 100 USD
+                trades.push({ type: 'COMPRA', price: currentPrice, units: unitsBought, investment: investmentAmountForTrade, index: i });
+            } else if (action === 'VENDI' && inTrade) {
+                // Se riceviamo un segnale di VENDI e siamo in posizione
+                inTrade = false;
+                const currentTradeValue = unitsBought * currentPrice;
+                const profitLossOnCurrentTrade = currentTradeValue - investmentAmountForTrade;
+                totalProfitLoss += profitLossOnCurrentTrade;
+                trades.push({ type: 'VENDI', price: currentPrice, units: unitsBought, profitLoss: profitLossOnCurrentTrade, investment: investmentAmountForTrade, index: i });
+                unitsBought = 0; // Reset unità
+                investmentAmountForTrade = 0; // Reset investimento
+            }
+        }
+
+        // Se alla fine del periodo siamo ancora in posizione, chiudiamo il trade al prezzo finale
+        if (inTrade) {
+            const finalPrice = sparkline[sparkline.length - 1];
+            const currentTradeValue = unitsBought * finalPrice;
+            const profitLoss = currentTradeValue - investmentAmountForTrade;
+            totalProfitLoss += profitLoss;
+            trades.push({ type: 'CHIUSURA_FINALE', price: finalPrice, units: unitsBought, profitLoss: profitLoss, investment: investmentAmountForTrade, index: sparkline.length - 1 });
+        }
+
+        return { totalProfitLoss, trades, initialInvestmentAmount: INITIAL_INVESTMENT_PER_TRADE }; 
+    }
+
+
     async function loadDashboard() {
       document.getElementById('loading').style.display = 'block';
       document.getElementById('dashboard').innerHTML = '';
       try {
         const data = await fetchCryptoData();
         const stablecoinIds = ['tether','usd-coin','binance-usd','dai','true-usd','pax-gold','stasis-euro','gemini-dollar','frax'];
-        const filtered = data.filter(c => !stablecoinIds.includes(c.id) && c.symbol && /^[a-z0-9]+$/i.test(c.symbol) && c.total_volume > 10000000 && c.current_price > 0.01);
-        const sorted = filtered.sort((a, b) => Math.abs(b.price_change_percentage_24h) - Math.abs(a.price_change_percentage_24h));
-        const actionable = sorted.filter(c => ['COMPRA', 'VENDI'].includes(suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price, c.current_price))).slice(0, 9); // Modificato il filtro
+        
+        // 1. Filtra le coin iniziali per criteri di base
+        let filteredAndProcessed = data.filter(c => !stablecoinIds.includes(c.id) && c.symbol && /^[a-z0-9]+$/i.test(c.symbol) && c.total_volume > 10000000 && c.current_price > 0.01);
+
+        // 2. Calcola il profitto simulato per ciascuna coin e memorizzalo
+        filteredAndProcessed = filteredAndProcessed.map(coin => {
+            const { totalProfitLoss, trades, initialInvestmentAmount } = calculateMiniBacktest(coin); 
+            coin.simulatedProfit = totalProfitLoss; 
+            coin.simulatedTrades = trades; 
+            coin.simulatedInitialInvestmentAmount = initialInvestmentAmount; 
+            return coin;
+        });
+
+        // 3. Filtra per profitto simulato di almeno il 3% (sul capitale di 100 USD) E deve avere un segnale COMPRA/VENDI ATTUALE
+        const MIN_SIMULATED_PROFIT_PERCENT = 3; // Profitto minimo richiesto ridotto a 3%
+        const actionable = filteredAndProcessed
+            .filter(c => {
+                const currentAction = suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price, c.current_price, c.total_volume);
+                return (
+                    c.simulatedProfit !== null &&
+                    c.simulatedInitialInvestmentAmount > 0 &&
+                    (c.simulatedProfit / c.simulatedInitialInvestmentAmount * 100) >= MIN_SIMULATED_PROFIT_PERCENT &&
+                    ['COMPRA', 'VENDI'].includes(currentAction) 
+                );
+            })
+            .sort((a, b) => b.simulatedProfit - a.simulatedProfit) // Ordina per profitto simulato più alto
+            .slice(0, 9); 
 
         document.getElementById('loading').style.display = 'none';
 
         if (!actionable.length) {
-          document.getElementById('dashboard').innerHTML = '<p class="text-center text-gray-400">Nessuna coin con segnale operativo chiaro.</p>';
+          document.getElementById('dashboard').innerHTML = '<p class="text-center text-gray-400">Nessuna coin con simulazione profittevole di almeno il 3% E segnale operativo chiaro negli ultimi 7 giorni con la strategia attuale. Riprova più tardi.</p>';
           return;
         }
 
         actionable.forEach(coin => {
           const spark = coin.sparkline_in_7d?.price || [];
           const symbol = tradingViewSymbolOverrides[coin.symbol.toLowerCase()] || coin.symbol.toUpperCase() + 'USDT';
-          const action = suggestAction(coin.price_change_percentage_24h, spark, coin.current_price);
+          const action = suggestAction(coin.price_change_percentage_24h, spark, coin.current_price, coin.total_volume);
           const extremesNote = checkNearExtremes(coin.current_price, spark);
           const changeClass = coin.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400';
           const ma7 = spark.slice(-7).reduce((a, b) => a + b, 0) / 7;
@@ -175,6 +288,12 @@
             <p class="text-lg font-bold mt-2 ${action === 'COMPRA' ? 'text-green-300' : action === 'VENDI' ? 'text-red-300' : 'text-gray-400'}">Segnale: ${action}</p>
             ${extremesNote ? `<p class="text-sm text-yellow-400 mt-1">${extremesNote}</p>` : ''}
             <iframe src="https://www.tradingview.com/widgetembed/?symbol=${symbol}&interval=D&theme=dark&style=1&locale=it&toolbarbg=1e293b&hide_top_toolbar=true&saveimage=false&studies=[]" style="width:100%;height:300px;border:none;margin-top:1rem;" allowtransparency="true" scrolling="no"></iframe>
+                <!-- Mostra la percentuale di profitto simulata direttamente sulla scheda -->
+                ${coin.simulatedProfit !== null && coin.simulatedInitialInvestmentAmount > 0 ? `<p class="text-md font-bold mt-2 ${coin.simulatedProfit >= 0 ? 'text-green-400' : 'text-red-400'}">Simulazione 7gg: ${((coin.simulatedProfit / coin.simulatedInitialInvestmentAmount) * 100).toFixed(2)}%</p>` : ''}
+            <!-- Nuovo pulsante per la simulazione del backtesting a 7 giorni, ora chiama la funzione di visualizzazione -->
+            <button onclick="event.preventDefault(); event.stopPropagation(); runMiniBacktestAndDisplay(${JSON.stringify(coin).replace(/"/g, '&quot;')})" class="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105 w-full">
+              Dettagli Simulazione 7 giorni
+            </button>
           `;
           document.getElementById('dashboard').appendChild(card);
         });
@@ -197,15 +316,115 @@
         const stablecoinIds = ['tether','usd-coin','binance-usd','dai','true-usd','pax-gold','stasis-euro','gemini-dollar','frax'];
         const filtered = data.filter(c => !stablecoinIds.includes(c.id) && c.symbol && /^[a-z0-9]+$/i.test(c.symbol) && c.total_volume > 10000000 && c.current_price > 0.01);
         const sorted = filtered.sort((a, b) => Math.abs(b.price_change_percentage_24h) - Math.abs(a.price_change_percentage_24h));
-        // Modificato il filtro per includere 'COMPRA' e 'VENDI'
-        const actionable = sorted.filter(c => ['COMPRA', 'VENDI'].includes(suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price, c.current_price))).slice(0, 9);
+        // Qui, il calcolatore trade continuerà a usare la logica di suggestAction per coerenza.
+        // Se si volesse che il calcolatore usi solo le coin profittevoli simulate, questa logica andrebbe replicata qui.
+        const actionable = sorted.filter(c => ['COMPRA', 'VENDI'].includes(suggestAction(c.price_change_percentage_24h, c.sparkline_in_7d?.price, c.current_price, c.total_volume))).slice(0, 9);
         const parametri = actionable.map(c => `${c.id},${c.current_price}`).join('|');
         const url = `calcolatore.html?dati=${encodeURIComponent(parametri)}`;
         window.open(url, '_blank');
       });
     }
 
+    // Funzione per chiudere il modal del backtesting
+    function closeBacktestModal() {
+        const modal = document.getElementById('backtestModal');
+        const modalContent = document.getElementById('backtestModalContent');
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modalContent.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300); // Deve corrispondere alla durata della transizione CSS
+    }
+
+    // Funzione per mostrare il modal del backtesting con i risultati
+    function showBacktestModal(coinName, resultsHtml) {
+        document.getElementById('backtestModal').classList.remove('hidden');
+        const modalContent = document.getElementById('backtestModalContent');
+        document.getElementById('backtestModalContent').querySelector('h3').innerText = `Simulazione Storica (7 giorni) per ${coinName}`;
+        document.getElementById('backtestResults').innerHTML = resultsHtml;
+        // Animazione del modale
+        setTimeout(() => {
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 50); // Piccolo ritardo per assicurare che hidden sia rimosso prima della transizione
+    }
+
+    // Funzione per eseguire il backtest e visualizzare i risultati nel modal
+    function runMiniBacktestAndDisplay(coin) {
+        // Ora recuperiamo i risultati della simulazione pre-calcolati sulla coin
+        const totalProfitLoss = coin.simulatedProfit;
+        const trades = coin.simulatedTrades;
+        const initialInvestmentAmount = coin.simulatedInitialInvestmentAmount;
+
+        // Se i dati per la simulazione non erano sufficienti al momento del calcolo, gestiamo qui
+        if (totalProfitLoss === null) { 
+            showBacktestModal(coin.name, `<p class="text-red-400">Dati insufficienti per la simulazione (necessari almeno 15 punti prezzo nella sparkline di 7 giorni).</p>`);
+            return;
+        }
+
+        let resultsHtml = `<p class="text-md font-semibold mb-2">Risultato della simulazione per ${coin.name}:</p>`;
+        if (trades.length === 0) {
+            resultsHtml += `<p class="text-yellow-400">Nessun segnale di COMPRA/VENDI generato negli ultimi 7 giorni con la strategia attuale.</p>`;
+        } else {
+            resultsHtml += `<ul class="list-disc list-inside space-y-1 mb-3">`;
+            trades.forEach(trade => {
+                if (trade.type === 'COMPRA') {
+                    // Modificato per mostrare le unità acquistate e l'investimento fisso
+                    resultsHtml += `<li class="text-green-300">Acquisto simulato di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} (Investimento: ${formatPrice(trade.investment)})</li>`;
+                } else if (trade.type === 'VENDI') {
+                    const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400';
+                    resultsHtml += `<li class="text-red-300">Vendita (Segnale) di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>`;
+                } else if (trade.type === 'CHIUSURA_SL') {
+                    const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'; 
+                    resultsHtml += `<li class="text-red-500">Vendita (Stop Loss) di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>`;
+                } else if (trade.type === 'CHIUSURA_TP') {
+                    const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'; 
+                    resultsHtml += `<li class="text-green-500">Vendita (Take Profit) di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>`;
+                } else if (trade.type === 'CHIUSURA_FINALE') {
+                     const plClass = trade.profitLoss >= 0 ? 'text-green-400' : 'text-red-400';
+                    resultsHtml += `<li class="text-gray-400">Chiusura posizione finale di ${trade.units.toFixed(8)} unità a ${formatPrice(trade.price)} <span class="${plClass}">(${trade.profitLoss.toFixed(4)} USD)</span></li>`;
+                }
+            });
+            resultsHtml += `</ul>`;
+
+            const totalClass = totalProfitLoss >= 0 ? 'text-green-400' : 'text-red-400';
+            resultsHtml += `<p class="text-lg font-bold mt-4">Profitto/Perdita Totale Simulato: <span class="${totalClass}">${totalProfitLoss.toFixed(4)} USD</span></p>`;
+            
+            // Calcolo corretto della percentuale basato sull'investimento iniziale fisso (100 USD)
+            if (initialInvestmentAmount > 0) {
+                const percentagePL = (totalProfitLoss / initialInvestmentAmount) * 100; 
+                resultsHtml += `<p class="text-md">Variazione Percentuale su ${initialInvestmentAmount} USD di capitale: <span class="${totalClass}">${percentagePL.toFixed(2)}%</span></p>`;
+            } else {
+                resultsHtml += `<p class="text-yellow-400">Nessun investimento iniziale simulato per calcolare la percentuale.</p>`;
+            }
+        }
+
+        showBacktestModal(coin.name, resultsHtml);
+    }
+
+
     loadDashboard();
   </script>
+
+<!-- Modal per il Backtesting -->
+<div id="backtestModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+  <div class="bg-gray-800 p-6 rounded-lg shadow-xl max-w-lg w-full transform transition-all duration-300 scale-95 opacity-0" id="backtestModalContent">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-blue-400">Simulazione Storica (7 giorni)</h3>
+      <button onclick="closeBacktestModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+    </div>
+    <div id="backtestResults" class="text-gray-300 text-sm overflow-y-auto max-h-96">
+      <!-- I risultati della simulazione verranno inseriti qui -->
+      <p class="mb-2">Caricamento simulazione...</p>
+    </div>
+    <div class="mt-4 text-center">
+      <p class="text-xs text-gray-500">
+        Questa è una simulazione semplificata basata sui dati degli ultimi 7 giorni.
+        Non tiene conto di commissioni, slippage, gestione reale delle posizioni, o eventi di mercato improvvisi.
+        Non è un consiglio finanziario e non garantisce performance future.
+      </p>
+    </div>
+  </div>
+</div>
 </body>
 </html>
